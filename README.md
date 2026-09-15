@@ -64,6 +64,15 @@ Each sync reports how many notes were pushed or merged in a small notice in the 
 - **Push** reads your vault's Web Clipper folder directly, finds notes marked `read: false`, and hands them to `kobo clippings push` to send to the device.
 - **Pull** runs `kobo export --app clippings` to retrieve whatever the Clippings app has queued — which notes were marked read and which tags were added since the last sync — and merges each change into that note's frontmatter with Obsidian's own frontmatter editor, so an already-open note updates live and nothing else in the file is touched.
 
+## Network use
+
+This plugin connects to your Kobo reader over your local Wi-Fi network — nothing on the wider internet, no third-party service. It runs the `kobo` command-line tool (from [Cobalt](https://github.com/BandarLabs/Cobalt)) as a subprocess, which opens an SSH connection to the IP address you set in **Settings → Clippings Sync**, to:
+
+- Push unread Web Clipper notes from this vault to the Clippings app on the device.
+- Pull back which notes were marked read and what tags were added, so they can be merged into this vault's frontmatter.
+
+No data leaves your own network, and no account or external server is involved.
+
 ## Troubleshooting
 
 - **"set the Kobo's address in Clippings Sync settings first"** — the Kobo address setting is empty; fill it in from `kobo devices`.
