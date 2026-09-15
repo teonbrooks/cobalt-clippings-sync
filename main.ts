@@ -20,18 +20,24 @@ import * as pathModule from "path";
 interface ExecFileError {
 	message: string;
 }
-const execFile = childProcess.execFile as (
-	command: string,
-	args: readonly string[],
-	options: { maxBuffer: number },
-	callback: (error: ExecFileError | null, stdout: string, stderr: string) => void,
-) => void;
-const fs = fsModule.promises as {
-	mkdtemp(prefix: string): Promise<string>;
-	readdir(path: string): Promise<string[]>;
-	readFile(path: string, encoding: "utf8"): Promise<string>;
-	rm(path: string, options: { recursive: boolean; force: boolean }): Promise<void>;
+const typedChildProcess = childProcess as {
+	execFile: (
+		command: string,
+		args: readonly string[],
+		options: { maxBuffer: number },
+		callback: (error: ExecFileError | null, stdout: string, stderr: string) => void,
+	) => void;
 };
+const execFile = typedChildProcess.execFile;
+const typedFs = fsModule as {
+	promises: {
+		mkdtemp(prefix: string): Promise<string>;
+		readdir(path: string): Promise<string[]>;
+		readFile(path: string, encoding: "utf8"): Promise<string>;
+		rm(path: string, options: { recursive: boolean; force: boolean }): Promise<void>;
+	};
+};
+const fs = typedFs.promises;
 const path = pathModule as { join(...segments: string[]): string };
 const os = osModule as { tmpdir(): string };
 
