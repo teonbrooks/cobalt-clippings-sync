@@ -4,7 +4,7 @@ import {
 	Notice,
 	Plugin,
 	PluginSettingTab,
-	Setting,
+	SettingDefinitionItem,
 	TFile,
 	normalizePath,
 } from "obsidian";
@@ -331,63 +331,65 @@ class ClippingsSyncSettingTab extends PluginSettingTab {
 		this.plugin = plugin;
 	}
 
-	display(): void {
-		const { containerEl } = this;
-		containerEl.empty();
-
-		new Setting(containerEl)
-			.setName("Kobo address")
-			.setDesc("The reader's IP address on your Wi-Fi (Settings > Wi-Fi on the Kobo).")
-			.addText((text) =>
-				text
-					.setPlaceholder("192.168.1.173")
-					.setValue(this.plugin.settings.deviceHost)
-					.onChange(async (value) => {
-						this.plugin.settings.deviceHost = value;
-						await this.plugin.saveSettings();
-					}),
-			);
-
-		new Setting(containerEl)
-			.setName("Kobo CLI path")
-			.setDesc("Path to the built `kobo` binary from the Cobalt repository.")
-			.addText((text) =>
-				text
-					.setPlaceholder("/Users/you/codespace/Cobalt/target/release/kobo")
-					.setValue(this.plugin.settings.koboPath)
-					.onChange(async (value) => {
-						this.plugin.settings.koboPath = value;
-						await this.plugin.saveSettings();
-					}),
-			);
-
-		new Setting(containerEl)
-			.setName("Clippings folder")
-			.setDesc("The Web Clipper folder in this vault, relative to the vault root.")
-			.addText((text) =>
-				text
-					.setPlaceholder("Clippings")
-					.setValue(this.plugin.settings.clippingsFolder)
-					.onChange(async (value) => {
-						this.plugin.settings.clippingsFolder = value || "Clippings";
-						await this.plugin.saveSettings();
-					}),
-			);
-
-		new Setting(containerEl)
-			.setName("Sync interval (minutes)")
-			.setDesc(
-				"How often to push and pull automatically while Obsidian is open. Set to 0 to disable automatic syncing.",
-			)
-			.addText((text) =>
-				text
-					.setPlaceholder("20")
-					.setValue(String(this.plugin.settings.pollMinutes))
-					.onChange(async (value) => {
-						const minutes = Number(value);
-						this.plugin.settings.pollMinutes = Number.isFinite(minutes) ? minutes : 0;
-						await this.plugin.saveSettings();
-					}),
-			);
+	getSettingDefinitions(): SettingDefinitionItem[] {
+		return [
+			{
+				name: "Kobo address",
+				desc: "The reader's IP address on your Wi-Fi (Settings > Wi-Fi on the Kobo).",
+				control: {
+					type: "text",
+					key: "deviceHost",
+					placeholder: "192.168.1.173",
+				},
+			},
+			{
+				name: "Kobo CLI path",
+				desc: "Path to the built `kobo` binary from the Cobalt repository.",
+				control: {
+					type: "text",
+					key: "koboPath",
+					placeholder: "/Users/you/codespace/Cobalt/target/release/kobo",
+				},
+			},
+			{
+				name: "Clippings folder",
+				desc: "The Web Clipper folder in this vault, relative to the vault root.",
+				control: {
+					type: "text",
+					key: "clippingsFolder",
+					placeholder: "Clippings",
+				},
+			},
+			{
+				name: "Sync interval (minutes)",
+				desc: "How often to push and pull automatically while Obsidian is open. Set to 0 to disable automatic syncing.",
+				control: {
+					type: "number",
+					key: "pollMinutes",
+					placeholder: "20",
+					min: 0,
+				},
+			},
+		];
 	}
+
+	getControlValue(key: string): unknown {
+		return settingsRecord(this.plugin.settings)[key];
+	}
+
+	async setControlValue(key: string, value: unknown): Promise<void> {
+		if (key === "clippingsFolder" && value === "") {
+			value = DEFAULT_SETTINGS.clippingsFolder;
+		}
+		if (key === "pollMinutes" && typeof value !== "number") {
+			value = 0;
+		}
+		settingsRecord(this.plugin.settings)[key] = value;
+		await this.plugin.saveSettings();
+	}
+
+}
+
+function settingsRecord(settings: ClippingsSyncSettings): Record<string, unknown> {
+	return settings as unknown as Record<string, unknown>;
 }
