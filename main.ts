@@ -8,7 +8,7 @@ import {
 	TFile,
 	normalizePath,
 } from "obsidian";
-import { execFile } from "child_process";
+import { execFile, ExecFileException } from "child_process";
 import { promises as fs } from "fs";
 import * as os from "os";
 import * as path from "path";
@@ -42,13 +42,18 @@ const EXPORT_TITLE = "Clippings sync";
 
 function run(command: string, args: string[]): Promise<string> {
 	return new Promise((resolve, reject) => {
-		execFile(command, args, { maxBuffer: 64 * 1024 * 1024 }, (error, stdout, stderr) => {
-			if (error) {
-				reject(new Error(stderr.trim() || stdout.trim() || error.message));
-			} else {
-				resolve(stdout);
-			}
-		});
+		execFile(
+			command,
+			args,
+			{ maxBuffer: 64 * 1024 * 1024 },
+			(error: ExecFileException | null, stdout: string, stderr: string) => {
+				if (error) {
+					reject(new Error(stderr.trim() || stdout.trim() || error.message));
+				} else {
+					resolve(stdout);
+				}
+			},
+		);
 	});
 }
 
@@ -59,7 +64,7 @@ export default class ClippingsSyncPlugin extends Plugin {
 	async onload() {
 		await this.loadSettings();
 
-		this.addRibbonIcon("refresh-cw", "Sync Clippings with Kobo", async () => {
+		this.addRibbonIcon("refresh-cw", "Sync clippings with Kobo", async () => {
 			await this.syncNow(true);
 		});
 
@@ -95,7 +100,7 @@ export default class ClippingsSyncPlugin extends Plugin {
 		this.registerInterval(
 			window.setTimeout(() => {
 				void this.syncNow(false);
-			}, 15_000) as unknown as number,
+			}, 15_000),
 		);
 	}
 
@@ -104,7 +109,8 @@ export default class ClippingsSyncPlugin extends Plugin {
 	}
 
 	async loadSettings() {
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+		const saved = (await this.loadData()) as Partial<ClippingsSyncSettings> | null;
+		this.settings = Object.assign({}, DEFAULT_SETTINGS, saved ?? {});
 	}
 
 	async saveSettings() {
@@ -150,7 +156,8 @@ export default class ClippingsSyncPlugin extends Plugin {
 			const message = await action();
 			new Notice(`${label}: ${message}`);
 		} catch (error) {
-			new Notice(`${label} failed: ${(error as Error).message}`);
+			const message = error instanceof Error ? error.message : String(error);
+			new Notice(`${label} failed: ${message}`);
 		}
 	}
 
@@ -232,13 +239,9 @@ export default class ClippingsSyncPlugin extends Plugin {
 		if (!(file instanceof TFile)) {
 			return false;
 		}
-		await this.app.fileManager.processFrontMatter(file, (frontmatter) => {
+		await this.app.fileManager.processFrontMatter(file, (frontmatter: Record<string, unknown>) => {
 			frontmatter.read = edit.read;
-			const existing: string[] = Array.isArray(frontmatter.tags)
-				? frontmatter.tags
-				: typeof frontmatter.tags === "string" && frontmatter.tags
-					? [frontmatter.tags]
-					: [];
+			const existing = existingTags(frontmatter.tags);
 			const merged = new Set(existing.map((tag) => tag.toLowerCase()));
 			const tags = [...existing];
 			for (const tag of edit.added_tags) {
@@ -251,6 +254,18 @@ export default class ClippingsSyncPlugin extends Plugin {
 		});
 		return true;
 	}
+}
+
+/** A note's existing `tags` frontmatter, which Obsidian may store as a list,
+ * a single string, or leave unset. */
+function existingTags(tags: unknown): string[] {
+	if (Array.isArray(tags)) {
+		return tags.filter((tag): tag is string => typeof tag === "string");
+	}
+	if (typeof tags === "string" && tags) {
+		return [tags];
+	}
+	return [];
 }
 
 function parsePendingEdits(raw: string): PendingEdit[] {
@@ -306,7 +321,7 @@ class ClippingsSyncSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
-			.setName("kobo CLI path")
+			.setName("Kobo CLI path")
 			.setDesc("Path to the built `kobo` binary from the Cobalt repository.")
 			.addText((text) =>
 				text

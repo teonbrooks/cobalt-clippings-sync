@@ -1,6 +1,6 @@
 import esbuild from "esbuild";
 import process from "process";
-import builtins from "builtin-modules";
+import { builtinModules } from "node:module";
 
 const banner = `/* clippings-sync: built, not for direct editing. Edit main.ts instead. */`;
 
@@ -10,7 +10,7 @@ const context = await esbuild.context({
 	banner: { js: banner },
 	entryPoints: ["main.ts"],
 	bundle: true,
-	external: ["obsidian", "electron", "@codemirror/*", "@lezer/*", ...builtins],
+	external: ["obsidian", "electron", "@codemirror/*", "@lezer/*", ...builtinModules],
 	format: "cjs",
 	target: "es2020",
 	logLevel: "info",
