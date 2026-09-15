@@ -1,7 +1,7 @@
 {
   "id": "clippings-sync",
   "name": "Clippings Sync",
-  "version": "0.1.1",
+  "version": "0.1.0",
   "minAppVersion": "1.4.4",
   "description": "Push Web Clipper notes to the Clippings app on a Kobo running Cobalt, and merge read/tag changes back into frontmatter.",
   "author": "Teon Brooks",

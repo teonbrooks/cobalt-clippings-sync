@@ -1,6 +1,6 @@
 {
   "name": "clippings-sync",
-  "version": "0.1.1",
+  "version": "0.1.0",
   "description": "Sync Web Clipper notes with the Clippings app on a Kobo running Cobalt.",
   "main": "main.js",
   "scripts": {
