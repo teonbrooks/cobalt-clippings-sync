@@ -1,0 +1,18 @@
+{
+  "name": "clippings-sync",
+  "version": "0.1.0",
+  "description": "Sync Web Clipper notes with the Clippings app on a Kobo running Cobalt.",
+  "main": "main.js",
+  "scripts": {
+    "dev": "node esbuild.config.mjs watch",
+    "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "builtin-modules": "^3.3.0",
+    "esbuild": "^0.28.2",
+    "obsidian": "^1.4.11",
+    "typescript": "^5.4.0"
+  }
+}
