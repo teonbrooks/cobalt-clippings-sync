@@ -8,10 +8,32 @@ import {
 	TFile,
 	normalizePath,
 } from "obsidian";
-import { execFile, ExecFileException } from "child_process";
-import { promises as fs } from "fs";
-import * as os from "os";
-import * as path from "path";
+import * as childProcess from "child_process";
+import * as fsModule from "fs";
+import * as osModule from "os";
+import * as pathModule from "path";
+
+/** Explicit shapes for exactly the Node APIs this plugin calls, so a type
+ * checker that can't resolve `@types/node` (and so falls back to typing the
+ * whole module `any`) still sees these as fully typed rather than letting
+ * every downstream call and member access read as unsafe. */
+interface ExecFileError {
+	message: string;
+}
+const execFile: (
+	command: string,
+	args: readonly string[],
+	options: { maxBuffer: number },
+	callback: (error: ExecFileError | null, stdout: string, stderr: string) => void,
+) => void = childProcess.execFile;
+const fs: {
+	mkdtemp(prefix: string): Promise<string>;
+	readdir(path: string): Promise<string[]>;
+	readFile(path: string, encoding: "utf8"): Promise<string>;
+	rm(path: string, options: { recursive: boolean; force: boolean }): Promise<void>;
+} = fsModule.promises;
+const path: { join(...segments: string[]): string } = pathModule;
+const os: { tmpdir(): string } = osModule;
 
 interface ClippingsSyncSettings {
 	deviceHost: string;
@@ -46,7 +68,7 @@ function run(command: string, args: string[]): Promise<string> {
 			command,
 			args,
 			{ maxBuffer: 64 * 1024 * 1024 },
-			(error: ExecFileException | null, stdout: string, stderr: string) => {
+			(error, stdout, stderr) => {
 				if (error) {
 					reject(new Error(stderr.trim() || stdout.trim() || error.message));
 				} else {
