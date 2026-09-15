@@ -20,20 +20,20 @@ import * as pathModule from "path";
 interface ExecFileError {
 	message: string;
 }
-const execFile: (
+const execFile = childProcess.execFile as (
 	command: string,
 	args: readonly string[],
 	options: { maxBuffer: number },
 	callback: (error: ExecFileError | null, stdout: string, stderr: string) => void,
-) => void = childProcess.execFile;
-const fs: {
+) => void;
+const fs = fsModule.promises as {
 	mkdtemp(prefix: string): Promise<string>;
 	readdir(path: string): Promise<string[]>;
 	readFile(path: string, encoding: "utf8"): Promise<string>;
 	rm(path: string, options: { recursive: boolean; force: boolean }): Promise<void>;
-} = fsModule.promises;
-const path: { join(...segments: string[]): string } = pathModule;
-const os: { tmpdir(): string } = osModule;
+};
+const path = pathModule as { join(...segments: string[]): string };
+const os = osModule as { tmpdir(): string };
 
 interface ClippingsSyncSettings {
 	deviceHost: string;
